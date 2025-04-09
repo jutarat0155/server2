@@ -49,10 +49,40 @@ router.get('/logs/:droneId', async (req, res) => {
 // POST /logs
 router.post('/logs', async (req, res) => {
   try {
-    const newLog = await createDroneLog(req.body);
-    res.status(201).json(newLog);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to create log' });
+    const logData = req.body;
+
+    const response = await fetch('https://app-tracking.pockethost.io/api/collections/drone_logs/records', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 20250301efx'
+      },
+      body: JSON.stringify({
+        drone_id: String(logData.drone_id),
+        drone_name: logData.drone_name,
+        country: logData.country,
+        celsius: logData.celsius
+      })
+    });
+
+    const postLog = await response.json();
+
+    if (response.ok) {
+      return res.status(200).json({
+        status: 'success',
+        data: postLog
+      });
+    } else {
+      return res.status(response.status).json({
+        status: 'failed',
+        message: postLog.message || `Failed to create log (Status: ${response.status})`
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      status: 'failed',
+      message: `Server error: ${error.message}`
+    });
   }
 });
 
